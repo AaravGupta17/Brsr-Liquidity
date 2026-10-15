@@ -110,7 +110,12 @@ def match_snapshot_by_isin_or_symbol(panel, ranks, reference_date="2022-03-31"):
     if disagreement.any():
         raise ValueError(f"{disagreement.sum()} conflicting symbol and ISIN ranks")
     x["MARKET_CAP_RANK"] = x["RANK_VIA_ISIN"].combine_first(x["RANK_VIA_SYMBOL"])
-    x["FIRM_ID"] = x["ISIN"].fillna(x["SYMBOL"])
+    # Anchor panel entity identity to the ONE historical NSE ranking record.
+    # ISINs / symbols can change following corporate actions; counting these
+    # as separate firms would inflate eligible firms beyond the top 1000.
+    x["FIRM_ID"] = "NSE2022_R" + x["MARKET_CAP_RANK"].astype("Int64").astype("string")
+    x["FIRM_ID"] = x["FIRM_ID"].fillna(
+        "UNMATCHED_" + x["ISIN"].fillna(x["SYMBOL"]).astype("string"))
     x["MATCH_METHOD"] = np.select(
         [x["RANK_VIA_ISIN"].notna(), x["RANK_VIA_SYMBOL"].notna()],
         ["ISIN_2022", "SYMBOL_EXACT"], default="UNMATCHED")
