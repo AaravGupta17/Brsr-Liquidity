@@ -23,14 +23,14 @@ def download_nse_snapshot(date="2022-03-31", timeout=70):
                                      "Referer": "https://www.nseindia.com/"})
     response.raise_for_status()
     content = response.content
-    if not content.startswith(b"PK\\x03\\x04"):
+    if not content.startswith(b"PK\x03\x04"):
         raise ValueError("NSE download is not a valid XLSX container")
     return content, hashlib.sha256(content).hexdigest()
 
 
 def parse_nse_snapshot(blob, asof_date="2022-03-31"):
     raw = pd.read_excel(BytesIO(blob), sheet_name=0)
-    normalized = {str(c).lower().strip().replace("\\n", " "): c for c in raw.columns}
+    normalized = {str(c).lower().strip().replace("\n", " "): c for c in raw.columns}
     def col(needle):
         hits = [v for k, v in normalized.items() if needle in k]
         if len(hits) != 1:
