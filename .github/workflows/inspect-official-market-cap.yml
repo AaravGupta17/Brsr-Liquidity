@@ -1,0 +1,20 @@
+name: Inspect official 2022 market-cap workbook
+on:
+  push:
+    branches: [research-v2]
+    paths: ['research_v2/inspect_official.py', '.github/workflows/inspect-official-market-cap.yml']
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests pandas openpyxl
+      - run: python -m research_v2.inspect_official
+      - uses: actions/upload-artifact@v4
+        with:
+          name: official-NSE-mcap-2022-workbook
+          path: reports/v2/source_files/
+          if-no-files-found: error
