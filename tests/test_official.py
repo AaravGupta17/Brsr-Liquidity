@@ -39,3 +39,35 @@ def test_snapshot_parsing_rejects_bad_rank_sequence():
     b2=BytesIO();raw.to_excel(b2,index=False)
     with pytest.raises(ValueError):
         parse_nse_snapshot(b2.getvalue())
+
+def test_exact_nse_duplicate_is_not_re_ranked():
+    raw = pd.DataFrame({
+        "Sr No": list(range(1, 1011)),
+        "Symbol": [f"F{i}" for i in range(1010)],
+        "Company Name": ["Company"] * 1010,
+        "Market capitalization as on March 31, 2022": list(range(1010,0,-1)),
+    })
+    raw.loc[1003, "Symbol"] = raw.loc[1002, "Symbol"]
+    raw.loc[1003, "Market capitalization as on March 31, 2022"] = (
+        raw.loc[1002,"Market capitalization as on March 31, 2022"]
+    )
+    stream = BytesIO(); raw.to_excel(stream,index=False)
+    result = parse_nse_snapshot(stream.getvalue())
+    assert len(result) == 1009
+    assert result["MARKET_CAP_RANK"].max() == 1010
+    assert 1004 not in result["MARKET_CAP_RANK"].tolist()
+    assert result["MARKET_CAP_RANK"].ge(1001).sum() == 9
+
+
+def test_duplicate_across_treatment_cutoff_rejected():
+    raw = pd.DataFrame({
+        "Sr No": list(range(1, 1002)),
+        "Symbol": [f"F{i}" for i in range(1001)],
+        "Company Name": ["Company"] * 1001,
+        "Market capitalization as on March 31, 2022": list(range(1001,0,-1)),
+    })
+    raw.loc[1000, "Symbol"] = raw.loc[999, "Symbol"]
+    raw.loc[1000, "Market capitalization as on March 31, 2022"] = raw.loc[999,"Market capitalization as on March 31, 2022"]
+    stream = BytesIO(); raw.to_excel(stream,index=False)
+    with pytest.raises(ValueError, match="Unresolved duplicate"):
+        parse_nse_snapshot(stream.getvalue())
