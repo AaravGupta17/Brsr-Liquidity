@@ -1,0 +1,27 @@
+name: Research v2 empirical descriptives
+on:
+  push:
+    branches: [research-v2]
+    paths:
+      - 'research_v2/**'
+      - '.github/workflows/research-v2-descriptives.yml'
+  workflow_dispatch:
+jobs:
+  descriptives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install requirements
+        run: pip install -r requirements-v2.txt
+      - name: Recalculate NSE market liquidity statistics
+        run: python -m research_v2.descriptive --bhavcopies brsr_research/data --out reports/v2/descriptive
+      - name: Upload reproducible outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-v2-nse-descriptives
+          path: reports/v2/descriptive/
+          if-no-files-found: error
