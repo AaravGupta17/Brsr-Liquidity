@@ -1,6 +1,17 @@
 # BRSR and Indian Equity Liquidity — Research v2
 
-**Status: methodological rebuild. Results from the old project are not validated causal evidence.**
+**Status: Official 2022 historical market-cap ranking integrated, NSE empirical models executed; these findings remain exploratory, not causal.**
+
+### Latest verified research (16 October 2026)
+
+The complete 2022 historical ranking is downloaded directly from NSE, and the old turnover-assigned treatment groups have been replaced. The official rank document contains 1,890 unique issuers after resolving one documented same-company duplication; 998 treated and 475 comparison entities are matched to historical NSE prices within ranks 1–1500. The FY2022–23 firm-and-month FE estimates find no statistically significant associations across the three measures in the primary comparison (CS spread p=0.9933, Amihud p=0.3145, Roll p=0.9120). A narrower Amihud specification is significant but does not persist under closer bandwidths or the longer horizon.
+
+- [Full verified results and limitations](reports/OFFICIAL_POLICY_RESULTS.md)
+- [Historical ranking and matching methodology](docs/OFFICIAL_RANKING_METHODOLOGY.md)
+- [Successful full NSE analysis and downloadable CSVs](https://github.com/AaravGupta17/Brsr-Liquidity/actions/runs/38804276000)
+- Main reproducible command: `python -m research_v2.run_official --data brsr_research/data --out reports/v2/official`
+
+
 
 This branch improves the original Brsr-Liquidity research, while retaining all original source data, code, and output files in brsr_research/.
 
@@ -45,7 +56,7 @@ The saved old files in brsr_research/output/ are preserved for provenance, **not
 - [x] Tested liquidity processing and two-way FE coefficient
 - [x] Verified-market-cap eligibility input contract
 - [x] Exploratory results pipeline and CI tests
-- [ ] Acquire independently validated 31 March 2022 rank mapping
+- [x] Acquire source-verified 31 March 2022 NSE rank mapping, with duplicate and unmatched-record audits
 - [ ] Acquire pre-May-2021 data and actual company disclosure dates
-- [ ] Run, inspect and peer-review full empirical estimates
+- [x] Run exploratory policy estimates with official NSE ranks; independent peer review and causal tests still pending
 - [ ] Rewrite final paper based on those verified estimates
