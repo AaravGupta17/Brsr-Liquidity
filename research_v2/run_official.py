@@ -38,7 +38,7 @@ def main():
         records.append({
             "group": mask_name, "firm_days": int(len(sample)),
             "symbols": int(sample["SYMBOL"].nunique()),
-            "firms_by_isin": int(sample["FIRM_ID"].nunique())
+            "unique_rank_or_unmatched_entities": int(sample["FIRM_ID"].nunique())
         })
     pd.DataFrame(records).to_csv(out / "ranking_coverage.csv", index=False)
     # Top-1000 vs nearby ranks 1001-1500 comparison. More credible
@@ -50,18 +50,27 @@ def main():
     if analysis["FIRM_ID"].nunique() < 100:
         raise ValueError("Unreasonably low matched coverage")
     results = []
-    for horizon, cutoff in [("FY2022_23", "2023-04-01"),
-                            ("FULL_TO_2024_03", "2024-04-01")]:
-        horizon_data = analysis.loc[analysis["DATE"].lt(cutoff)]
-        for measure in MEASURES:
-            sample = horizon_data.dropna(subset=[measure])
-            try:
-                result = fit_policy_did(sample, outcome=measure, cluster="two-way")
-                result["horizon"] = horizon
-                results.append(result)
-            except (ValueError, FloatingPointError) as exc:
-                results.append({"horizon":horizon, "outcome":measure,
-                                "error":f"{type(exc).__name__}: {exc}"})
+    # Comparison groups are pre-specified: all top-1000 vs 1001-1500,
+    # plus symmetric bands around rank-1000. All use the SAME 2022 ranking.
+    specifications = [
+        ("top1000_vs_1001_1500", analysis),
+        ("local_rank_751_1250", analysis.loc[analysis["MARKET_CAP_RANK"].between(751,1250)]),
+        ("local_rank_901_1100", analysis.loc[analysis["MARKET_CAP_RANK"].between(901,1100)]),
+    ]
+    for comparison, comparison_data in specifications:
+        for horizon, cutoff in [("FY2022_23", "2023-04-01"),
+                                ("FULL_TO_2024_03", "2024-04-01")]:
+            horizon_data = comparison_data.loc[comparison_data["DATE"].lt(cutoff)]
+            for measure in MEASURES:
+                sample = horizon_data.dropna(subset=[measure])
+                try:
+                    result = fit_policy_did(sample, outcome=measure, cluster="two-way")
+                    result["horizon"] = horizon
+                    result["comparison"] = comparison
+                    results.append(result)
+                except (ValueError, FloatingPointError) as exc:
+                    results.append({"horizon":horizon, "comparison":comparison, 
+                                    "outcome":measure, "error":f"{type(exc).__name__}: {exc}"})
     pd.DataFrame(results).to_csv(out / "exploratory_did_with_official_ranks.csv",index=False)
     metadata = {
         "label":"EXPLORATORY association, not a verified BRSR causal effect",
