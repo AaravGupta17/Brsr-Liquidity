@@ -47,6 +47,11 @@ def parse_nse_snapshot(blob, asof_date="2022-03-31"):
     if len(r) < 1000:
         raise ValueError(f"Only {len(r)} valid NSE rows; expected full ranking")
     if r["MARKET_CAP_RANK"].duplicated().any() or r["SYMBOL"].duplicated().any():
+        print("RANK_FILE_DIAGNOSTICS", "rows",len(r),
+              "duplicate_ranks",int(r["MARKET_CAP_RANK"].duplicated().sum()),
+              "duplicate_symbols",int(r["SYMBOL"].duplicated().sum()))
+        print("DUPLICATE_RANKS",r[r["MARKET_CAP_RANK"].duplicated(keep=False)].head(20).to_string(index=False))
+        print("DUPLICATE_SYMBOLS",r[r["SYMBOL"].duplicated(keep=False)].head(20).to_string(index=False))
         raise ValueError("Duplicate official ranks / symbols")
     if not r["MARKET_CAP_RANK"].eq(np.arange(1, len(r)+1)).all():
         raise ValueError("Official rank sequence has gaps or is unsorted")
