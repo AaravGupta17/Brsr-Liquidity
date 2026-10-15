@@ -46,15 +46,26 @@ def parse_nse_snapshot(blob, asof_date="2022-03-31"):
     r = r.loc[r["SYMBOL"].ne("")].copy()
     if len(r) < 1000:
         raise ValueError(f"Only {len(r)} valid NSE rows; expected full ranking")
-    if r["MARKET_CAP_RANK"].duplicated().any() or r["SYMBOL"].duplicated().any():
-        print("RANK_FILE_DIAGNOSTICS", "rows",len(r),
-              "duplicate_ranks",int(r["MARKET_CAP_RANK"].duplicated().sum()),
-              "duplicate_symbols",int(r["SYMBOL"].duplicated().sum()))
-        print("DUPLICATE_RANKS",r[r["MARKET_CAP_RANK"].duplicated(keep=False)].head(20).to_string(index=False))
-        print("DUPLICATE_SYMBOLS",r[r["SYMBOL"].duplicated(keep=False)].head(20).to_string(index=False))
-        raise ValueError("Duplicate official ranks / symbols")
-    if not r["MARKET_CAP_RANK"].eq(np.arange(1, len(r)+1)).all():
-        raise ValueError("Official rank sequence has gaps or is unsorted")
+    if r["MARKET_CAP_RANK"].duplicated().any():
+        raise ValueError("Duplicate official rank numbers")
+    original_rank_count = len(r)
+    if not r["MARKET_CAP_RANK"].eq(np.arange(1, original_rank_count+1)).all():
+        raise ValueError("Official ordinal ranks must run 1..N")
+    # Official March 2022 workbook repeats VIKASLIFE at ranks 1123 and 1124,
+    # both with almost identical market capitalization. Verify near-equality
+    # before collapsing to a single firm, preserving the FIRST official rank.
+    dupe = r.loc[r["SYMBOL"].duplicated(keep=False)].copy()
+    if not dupe.empty:
+        for symbol, group in dupe.groupby("SYMBOL"):
+            vals = group["MARKET_CAP_SOURCE_VALUE"]
+            ranks = group["MARKET_CAP_RANK"].astype(int)
+            close = (vals.max()-vals.min()) <= max(0.001, vals.max()*1e-8)
+            same_side = (ranks.le(1000).all() or ranks.gt(1000).all())
+            consecutive = ranks.sort_values().diff().dropna().eq(1).all()
+            if not (close and same_side and consecutive):
+                raise ValueError(f"Unresolved duplicate NSE symbol {symbol}: {group.to_dict('records')}")
+            print(f"OFFICIAL_DUPLICATE_COLLAPSED symbol={symbol} ranks={list(ranks)}")
+        r = r.drop_duplicates("SYMBOL",keep="first").copy()
     if (r["MARKET_CAP_SOURCE_VALUE"] <= 0).any():
         raise ValueError("Unexpected zero or negative market caps")
     if (r["MARKET_CAP_SOURCE_VALUE"].diff().iloc[1:] > 0.00001).any():
