@@ -1,0 +1,29 @@
+name: Official NSE BRSR exploratory analysis
+on:
+  push:
+    branches: [research-v2]
+    paths:
+      - 'research_v2/official.py'
+      - 'research_v2/run_official.py'
+      - 'research_v2/core.py'
+      - 'research_v2/model.py'
+      - '.github/workflows/official-brsr-research.yml'
+  workflow_dispatch:
+jobs:
+  official-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements-v2.txt requests openpyxl
+      - name: Recompute policy comparisons with official NSE ranking
+        run: python -m research_v2.run_official --data brsr_research/data --out reports/v2/official
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-v2-official-marketcap-results
+          path: reports/v2/official/
+          if-no-files-found: warn

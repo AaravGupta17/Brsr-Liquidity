@@ -27,7 +27,9 @@ def fit_policy_did(df, *, outcome="CS_SPREAD", cluster="firm"):
     missing = needed - set(df)
     if missing:
         raise ValueError(f"Missing: {sorted(missing)}; no policy comparison")
-    x = df[list(needed)].dropna().copy()
+    firm = "FIRM_ID" if "FIRM_ID" in df.columns else "SYMBOL"
+    columns = list(needed | ({firm} if firm != "SYMBOL" else set()))
+    x = df[columns].dropna().copy()
     x["DATE"] = pd.to_datetime(x["DATE"])
     x = x.loc[x["DATE"] >= pd.Timestamp("2021-10-01")].copy()
     x["YM"] = x["DATE"].dt.to_period("M").astype(str)
@@ -38,14 +40,14 @@ def fit_policy_did(df, *, outcome="CS_SPREAD", cluster="firm"):
         raise ValueError("Both groups require pre and post")
     if x.duplicated(["SYMBOL", "DATE"]).any():
         raise ValueError("Duplicate firm/date")
-    monthly = (x.groupby(["SYMBOL", "YM", "TREATED"], as_index=False)
+    monthly = (x.groupby([firm, "YM", "TREATED"], as_index=False)
                .agg(OUTCOME=(outcome, "mean"), N_DAYS=(outcome, "size")))
     monthly["POST"] = monthly["YM"].ge("2022-04").astype(int)
     monthly["POLICY_DID"] = monthly["TREATED"] * monthly["POST"]
-    residuals = within_two_way(monthly, ["OUTCOME", "POLICY_DID"])
+    residuals = within_two_way(monthly, ["OUTCOME", "POLICY_DID"], firm=firm)
     if np.isclose(residuals["POLICY_DID"].var(), 0):
         raise ValueError("Not identified after fixed effects")
-    firm_groups = monthly["SYMBOL"].astype("category").cat.codes.to_numpy()
+    firm_groups = monthly[firm].astype("category").cat.codes.to_numpy()
     time_groups = monthly["YM"].astype("category").cat.codes.to_numpy()
     if cluster == "firm":
         groups = firm_groups
@@ -63,7 +65,7 @@ def fit_policy_did(df, *, outcome="CS_SPREAD", cluster="firm"):
         "p_value": float(fit.pvalues["POLICY_DID"]),
         "ci_low": float(ci.iloc[0]),
         "ci_high": float(ci.iloc[1]),
-        "n_firms": int(monthly["SYMBOL"].nunique()),
+        "n_firms": int(monthly[firm].nunique()),
         "n_months": int(monthly["YM"].nunique()),
         "n_firm_months": int(len(monthly)),
         "n_pre_months": int(monthly.loc[monthly["YM"] < "2022-04", "YM"].nunique()),

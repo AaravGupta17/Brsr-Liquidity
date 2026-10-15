@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 BHAV_COLUMNS = ["SYMBOL", "SERIES", "HIGH", "LOW", "CLOSE", "PREVCLOSE",
-                "TOTTRDQTY", "TOTTRDVAL", "TIMESTAMP"]
+                "TOTTRDQTY", "TOTTRDVAL", "TIMESTAMP", "ISIN"]
 NUMERICS = ["HIGH", "LOW", "CLOSE", "PREVCLOSE", "TOTTRDQTY", "TOTTRDVAL"]
 POLICY_RANK_DATE = pd.Timestamp("2022-03-31")
 
@@ -30,7 +30,7 @@ def load_bhavcopies(folder):
         raw["SYMBOL"] = raw["SYMBOL"].astype(str).str.strip().str.upper()
         for col in NUMERICS:
             raw[col] = pd.to_numeric(raw[col], errors="coerce")
-        chunks.append(raw[["SYMBOL", "DATE", *NUMERICS]])
+        chunks.append(raw[["SYMBOL", "DATE", "ISIN", *NUMERICS]])
     out = pd.concat(chunks, ignore_index=True)
     if out.duplicated(["SYMBOL", "DATE"]).any():
         count = int(out.duplicated(["SYMBOL", "DATE"]).sum())
