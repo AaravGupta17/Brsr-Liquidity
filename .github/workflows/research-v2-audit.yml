@@ -1,0 +1,31 @@
+name: Research V2 causal design audit
+on:
+  push:
+    branches: [research-v2]
+    paths:
+      - research_v2/audit_rd.py
+      - research_v2/official.py
+      - research_v2/core.py
+      - research_v2/model.py
+      - .github/workflows/research-v2-audit.yml
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project dependencies
+        run: pip install -r requirements-v2.txt
+      - name: Re-estimate RDD and validate independent V2 coefficients
+        run: python -m research_v2.audit_rd --data brsr_research/data --out reports/v2/validation
+      - name: Upload audit tables and run summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-v2-rdd-and-validation
+          path: reports/v2/validation/
+          if-no-files-found: warn
