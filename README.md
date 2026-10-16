@@ -2,6 +2,14 @@
 
 **Status: Official 2022 historical market-cap ranking integrated, NSE empirical models executed; these findings remain exploratory, not causal.**
 
+### RDD replication and causal-design validation — 16 October 2026
+
+A new, source-based audit reconstructed the original research-outline RDD using actual historical NSE market-cap rankings, company-level pre/post changes, rank- and market-cap-running variables, cutoff sensitivity and independent sparse fixed-effects re-estimation. The original statistically significant reduction **was not reproduced** in the corrected main RDD models. The V2 FE coefficient calculations independently reproduced across six models; differential pre-period CS spread trends remain a warning (p=0.0251, only six pre-months). **No causal finding is certified.**
+
+- [Complete RDD replication, findings and limitations](reports/RDD_REPLICATION_VALIDATION.md)
+- [Validation protocol](docs/RDD_VALIDATION_PROTOCOL.md)
+- [Executed workflow and six downloadable result files](https://github.com/AaravGupta17/Brsr-Liquidity/actions/runs/38861019687)
+
 ### Latest verified research (16 October 2026)
 
 The complete 2022 historical ranking is downloaded directly from NSE, and the old turnover-assigned treatment groups have been replaced. The official rank document contains 1,890 unique issuers after resolving one documented same-company duplication; 998 treated and 475 comparison entities are matched to historical NSE prices within ranks 1–1500. The FY2022–23 firm-and-month FE estimates find no statistically significant associations across the three measures in the primary comparison (CS spread p=0.9933, Amihud p=0.3145, Roll p=0.9120). A narrower Amihud specification is significant but does not persist under closer bandwidths or the longer horizon.
